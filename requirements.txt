@@ -1,0 +1,14 @@
+langchain
+langchain-core
+langchain_community
+langchain-openai
+langchain-chroma
+langchain-text-splitters
+langchain-huggingface
+langchain-google-genai
+pypdf
+pymupdf
+python-dotenv
+matplotlib
+scikit-learn
+google-generativeai
