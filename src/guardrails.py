@@ -23,8 +23,10 @@ HARMFUL_PATTERNS = [
     r"\b(want|wish|going)\s*(to)?\s*(die|kill|end\s*(it|my\s*life|everything))\b",
     r"\b(self[\s-]?harm|cut\s*(myself|yourself)|slit|bleed)\b",
     r"\b(end\s*(my|your|his|her)\s*life)\b",
-    # violence
+    # violence — each keyword standalone so "I want to crash X" works
     r"\b(bomb|explosive|weapon|gun|shoot|stab|attack|beat|thrash)\b",
+    r"\b(crash\s*(an?|the|my)?\s*(airplane|aeroplane|plane|car|bus|train|vehicle))\b",
+    r"\b(burn\s*(my|his|her|the)?\s*(partner|wife|husband|girlfriend|boyfriend|house|him|her|them))\b",
     # illegal
     r"\b(how\s*to\s*(hack|steal|rob|kidnap|traffick))\b",
     # abuse
@@ -38,6 +40,7 @@ BLOCKED_WORDS = {
     "suicide", "murder", "kill", "poison", "homicide",
     "assassinate", "bomb", "explosive", "weapon", "rape",
     "molest", "hack", "kidnap", "traffick", "terrorist", "sex", "fuck",
+    "crash", "arson",
 }
 
 
