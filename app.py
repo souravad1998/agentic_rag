@@ -7,7 +7,7 @@ from src import EmbeddingManager, VectorStore, RAGRetriever, AdvancedRAGPipeline
 # ─── Page config ─────────────────────────────────────────────
 
 st.set_page_config(
-    page_title="Vedic AI Life Coach",
+    page_title="RAG Based Vedic Life Coach",
     page_icon="🙏",
     layout="centered",
 )
@@ -197,7 +197,7 @@ with st.sidebar:
 
 st.markdown("""
 <div class="hero">
-    <h1>🙏 Vedic AI Life Coach</h1>
+    <h1>🙏 RAG Based Vedic Life Coach</h1>
     <p>Wisdom from ancient scriptures, applied to modern life</p>
 </div>
 """, unsafe_allow_html=True)
@@ -236,10 +236,19 @@ for msg in st.session_state.messages:
 # handle example button clicks
 prefill = st.session_state.pop("prefill", None)
 
-if prompt := (prefill or st.chat_input("Ask me anything about life...")):
+# disable input while a query is running
+is_processing = st.session_state.get("processing", False)
+
+if prompt := (prefill or st.chat_input(
+    "⏳ Processing... please wait" if is_processing else "Ask me anything about life...",
+    disabled=is_processing
+)):
     # add user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.markdown(f'<div class="user-msg">{prompt}</div>', unsafe_allow_html=True)
+
+    # lock input while processing
+    st.session_state["processing"] = True
 
     # generate response
     with st.spinner("🙏 Seeking wisdom from the scriptures..."):
@@ -249,6 +258,9 @@ if prompt := (prefill or st.chat_input("Ask me anything about life...")):
             use_reranking=use_reranking,
             summarize=summarize,
         )
+
+    # unlock input
+    st.session_state["processing"] = False
 
     # check if guardrail blocked it
     is_blocked = len(result["sources"]) == 0 and (
