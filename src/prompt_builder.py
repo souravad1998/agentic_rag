@@ -1,6 +1,4 @@
-"""
-Prompt Builder — constructs system and user prompts for the LLM.
-"""
+"""Prompt construction for the Vedic Life Coach LLM."""
 
 from typing import List, Dict, Any
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -30,19 +28,11 @@ FORMATTING:
 
 
 class PromptBuilder:
-    """Constructs system and user prompts for the LLM."""
+    """Builds the system + user message pair that gets sent to the LLM."""
 
     @staticmethod
     def build_context(results: List[Dict[str, Any]]) -> str:
-        """
-        Format retrieved verses into a context block for the LLM.
-
-        Args:
-            results: List of retrieved documents from RAGRetriever
-
-        Returns:
-            Formatted string of verses for the LLM prompt
-        """
+        """Turn retriever results into a formatted context block."""
         if not results:
             return "No relevant verses were found."
 
@@ -59,16 +49,7 @@ class PromptBuilder:
 
     @staticmethod
     def build_messages(question: str, context: str) -> List:
-        """
-        Build the final message list for the LLM.
-
-        Args:
-            question: User's life question
-            context: Formatted scripture context
-
-        Returns:
-            List of SystemMessage and HumanMessage for LLM
-        """
+        """Assemble the final [SystemMessage, HumanMessage] pair for the LLM."""
         user_prompt = (
             f"RETRIEVED SCRIPTURE VERSES:\n"
             f"{'━' * 50}\n"

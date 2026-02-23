@@ -1,6 +1,4 @@
-"""
-Search — RAG Retriever with semantic search and LLM re-ranking.
-"""
+"""RAG retriever — semantic search + LLM-based re-ranking."""
 
 import re
 from typing import List, Dict, Any
@@ -12,19 +10,12 @@ from src.vectorstore import VectorStore
 
 
 class RAGRetriever:
-    """Handles query-based retrieval from the vector store with LLM re-ranking."""
+    """Handles query → embed → search → rerank pipeline."""
 
     def __init__(self, vector_store: VectorStore, embedding_manager: EmbeddingManager, api_key: str = GEMINI_API_KEY):
-        """
-        Initialize the retriever.
-
-        Args:
-            vector_store: Vector store containing document embeddings
-            embedding_manager: Manager for generating query embeddings
-            api_key: Gemini API key for LLM re-ranking
-        """
         self.vector_store = vector_store
         self.embedding_manager = embedding_manager
+        # Flash model for re-ranking — fast and cheap
         self.reranker_llm = ChatGoogleGenerativeAI(
             model=RERANKER_MODEL,
             google_api_key=api_key,
@@ -33,25 +24,12 @@ class RAGRetriever:
         print(f"📚 RAG Retriever ready — {self.vector_store.collection.count()} docs")
 
     def retrieve(self, query: str, top_k: int = 5, where_filter: dict = None, score_threshold: float = 0.0) -> List[Dict[str, Any]]:
-        """
-        Retrieve relevant documents for a query.
-
-        Args:
-            query: The search query
-            top_k: Number of top results to return
-            where_filter: Optional metadata filter, e.g. {"chapter_title": "Karm Yog"}
-            score_threshold: Minimum similarity score threshold
-
-        Returns:
-            List of dictionaries containing retrieved documents and metadata
-        """
+        """Embed query → search ChromaDB → return top_k docs above threshold."""
         print(f"Retrieving documents for query: '{query}'")
         print(f"Top K: {top_k}, Score threshold: {score_threshold}")
 
-        # Generate query embedding (embed_query — optimized for search)
         query_embedding = self.embedding_manager.model.embed_query(query)
 
-        # Search in vector store
         try:
             query_params = {
                 "query_embeddings": [query_embedding],
@@ -63,32 +41,26 @@ class RAGRetriever:
 
             results = self.vector_store.collection.query(**query_params)
 
-            # Process results
             retrieved_docs = []
-
             if results['documents'] and results['documents'][0]:
-                documents = results['documents'][0]
-                metadatas = results['metadatas'][0]
-                distances = results['distances'][0]
-                ids = results['ids'][0]
-
-                for i, (doc_id, document, metadata, distance) in enumerate(zip(ids, documents, metadatas, distances)):
-                    similarity_score = round(1 - distance, 4)
-
-                    if similarity_score >= score_threshold:
+                for i, (doc_id, doc, meta, dist) in enumerate(zip(
+                    results['ids'][0], results['documents'][0],
+                    results['metadatas'][0], results['distances'][0]
+                )):
+                    # ChromaDB returns cosine distance, we want similarity
+                    similarity = round(1 - dist, 4)
+                    if similarity >= score_threshold:
                         retrieved_docs.append({
                             'id': doc_id,
-                            'content': document,
-                            'metadata': metadata,
-                            'similarity_score': similarity_score,
-                            'distance': distance,
+                            'content': doc,
+                            'metadata': meta,
+                            'similarity_score': similarity,
+                            'distance': dist,
                             'rank': i + 1
                         })
-
                 print(f"Retrieved {len(retrieved_docs)} documents (after filtering)")
             else:
                 print("No documents found")
-
             return retrieved_docs
 
         except Exception as e:
@@ -96,17 +68,7 @@ class RAGRetriever:
             return []
 
     def llm_rerank(self, query: str, results: List[Dict[str, Any]], final_k: int = 5) -> List[Dict[str, Any]]:
-        """
-        Use Gemini Flash to re-rank retrieved results by relevance.
-
-        Args:
-            query: The user's original question
-            results: List of retrieved docs from self.retrieve()
-            final_k: How many to keep after re-ranking
-
-        Returns:
-            Top final_k results, re-ordered by LLM judgment
-        """
+        """Ask Gemini Flash to re-order results by relevance. Cheap second opinion."""
         if len(results) <= final_k:
             return results
 
@@ -138,30 +100,18 @@ class RAGRetriever:
             return reranked[:final_k]
 
         except Exception as e:
+            # graceful fallback — better to return unranked than nothing
             print(f"⚠️ Re-ranking failed ({e}), returning original order")
             return results[:final_k]
 
     def retrieve_and_rerank(self, query: str, initial_k: int = 10, final_k: int = 5,
                             where_filter: dict = None, score_threshold: float = 0.0) -> List[Dict[str, Any]]:
-        """
-        Full pipeline: Retrieve broadly → LLM re-rank → Return top results.
-
-        Args:
-            query: User's question
-            initial_k: How many to retrieve initially (wide net)
-            final_k: How many to keep after re-ranking
-            where_filter: Optional metadata filter
-            score_threshold: Minimum similarity score
-
-        Returns:
-            Top final_k re-ranked results
-        """
+        """Full pipeline: cast a wide net (initial_k) → LLM rerank → keep top final_k."""
         results = self.retrieve(query, top_k=initial_k, where_filter=where_filter, score_threshold=score_threshold)
-        reranked = self.llm_rerank(query, results, final_k=final_k)
-        return reranked
+        return self.llm_rerank(query, results, final_k=final_k)
 
     def pretty_print(self, results: List[Dict[str, Any]]) -> None:
-        """Display retrieval results in a readable format."""
+        """Debug helper — prints results in a readable format."""
         print("=" * 60)
         print("📖  RETRIEVED VERSES")
         print("=" * 60)
