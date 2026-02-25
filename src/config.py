@@ -18,4 +18,4 @@ COLLECTION_NAME = "bhagavad_verses"
 # Models — change these when swapping providers or upgrading
 EMBEDDING_MODEL = "gemini-embedding-001"
 RERANKER_MODEL = "gemini-2.5-flash"      # cheap & fast, used for re-ranking only
-LLM_MODEL = "gemini-2.5-pro"             # main reasoning model
+LLM_MODEL = "gemini-2.5-pro"       # latest reasoning model
