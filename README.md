@@ -4,13 +4,13 @@
 
 ![Vedic Life Coach UI](assets/screenshot.png)
 
-Ask it anything about life — relationships, career confusion, anger, purpose, grief — and it pulls **real verses** from the Bhagavad Gita, Vedas, and Upanishads, then weaves them into practical, modern advice.
+Ask it anything about life, relationships, career confusion, anger, purpose, grief and it pulls **real verses** from the Bhagavad Gita, Vedas, and Upanishads, then weaves them into practical, modern advice.
 
 ---
 
 ## What makes this different?
 
-Most AI chatbots hallucinate spiritual advice. This one **can't** — every answer is grounded in actual scripture chunks retrieved from a vector database, with verse-level citations you can verify.
+Most AI chatbots hallucinate spiritual advice. This one **can't** , every answer is grounded in actual scripture chunks retrieved from a vector database, with verse-level citations you can verify.
 
 **The pipeline:**
 
